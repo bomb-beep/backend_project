@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block header %}
+	<h1>Index</h1>
+	{% if g.user %}
+		<a class="action" href="{{url_for(blog.create)}}">New</a>
+	{% endif %}
+{% endblock %}
+
+{% block content %}
+	{% for p in posts %}
+		<h1>{{p["title"]}}</h1>
+		<h1>{{p["created"]}}</h1>
+		<hr>
+		<body>{{p["body"]}}</body>
+	{% endfor %}
+{% endblock %}
