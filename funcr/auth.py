@@ -31,10 +31,9 @@ def register():
 			except db.IntegrityError:
 				error = f"User {username} is already registered"
 			else:
-				redirect(url_for("auth.login"))
+				return redirect(url_for("auth.login"))
 		
-		if error:
-			flash(error)
+		flash(error)
 	return render_template("auth/register.html")
 
 @bp.route("/login",methods=("GET","POST"))
@@ -46,17 +45,17 @@ def login():
 		db = get_db()
 		error = None
 
-		if not username:
-			error = "Username is required"
-		elif not password:
-			error = "Password is required"
+		user = db.execute(
+			"SELECT * FROM user WHERE USERNAME = ?",
+			(username,)
+		).fetchone()
+
+		if not user:
+			error = "Incorrect username"
 
 		if not error:
-			user = db.execute(
-				"SELECT * FROM user WHERE USERNAME = ?",
-				(username,)
-			)
-			if not user["password"] == check_password_hash(password):
+
+			if not check_password_hash(user["password"],password):
 				error = "Incorrect password"
 			else:
 				session.clear()
@@ -64,10 +63,12 @@ def login():
 				
 		if error:
 			flash(error)
+		else:
+			return redirect(url_for("index"))
 
-	render_template("auth/login.html")
+	return render_template("auth/login.html")
 
-@bp.before_app_request()
+@bp.before_app_request
 def load_logged_in_user():
 	user_id = session.get("user_id")
 
@@ -79,7 +80,7 @@ def load_logged_in_user():
 			(user_id,)
 		).fetchone()
 
-bp.route("/logout")
+@bp.route("/logout")
 def logout():
 	session.clear()
 
@@ -93,4 +94,4 @@ def login_required(view):
 		else:
 			return view(**kwargs)
 		
-	return wrapped_view(view)
+	return wrapped_view
