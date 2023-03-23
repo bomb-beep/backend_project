@@ -12,7 +12,7 @@ bp = Blueprint("blog",__name__)
 def index():
 	db = get_db()
 	posts = db.execute(
-		"SELECT p.id, created, title, body, username"
+		"SELECT p.id, created, title, body, username, author_id"
 		" FROM post p JOIN user u ON p.author_id = u.id"
 		" ORDER BY p.created DESC"
 	).fetchall()
@@ -72,8 +72,9 @@ def update(id):
 			db = get_db()
 			db.execute(
 				"UPDATE post"
-				" SET title = ?, body = ?",
-				(title,body)
+				" SET title = ?, body = ?"
+				" WHERE id = ?",
+				(title,body,id)
 			)
 			db.commit()
 			return redirect(url_for("index"))
@@ -93,3 +94,10 @@ def delete(id):
 	db.commit()
 
 	return redirect(url_for("index"))
+
+
+@bp.route("/<int:id>",methods=("GET",))
+def show_post(id):
+	post = get_post(id,check_author=False)
+
+	return render_template("blog/show.html",post = post)
