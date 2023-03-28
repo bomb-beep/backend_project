@@ -39,7 +39,9 @@ def create():
 			)
 			db.commit()
 
-		return redirect(url_for("index"))
+			return redirect(url_for("index"))
+		else:
+			flash(error)
 
 	return render_template("blog/create.html")
 
@@ -79,7 +81,8 @@ def update(id):
 			)
 			db.commit()
 			return redirect(url_for("index"))
-
+		else:
+			flash(error)
 	return render_template("blog/update.html",post=post)
 
 @bp.route("/<int:id>/delete",methods=("GET","POST"))

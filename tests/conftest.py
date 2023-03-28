@@ -25,11 +25,11 @@ def app():
 
 @pytest.fixture
 def client(app):
-	app.test_client()
+	return app.test_client()
 
 @pytest.fixture
 def runner(app):
-	app.test_cli_runner()
+	return app.test_cli_runner()
 
 class AuthActions(object):
 	def __init__(self,client) -> None:
