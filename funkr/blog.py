@@ -5,6 +5,7 @@ from werkzeug.exceptions import abort
 
 from funkr.auth import login_required
 from funkr.db import get_db
+from base64 import b64encode,b64decode
 
 bp = Blueprint("blog",__name__)
 
@@ -55,7 +56,7 @@ def get_post(id,check_author = True):
 
 	if not post:
 		return abort(404,f"Post {id} does not exist")
-	elif check_author and g.user["id"] != post["author_id"]:
+	elif check_author and g.user["token"] != post["token"]:
 		return abort(403)
 	return post
 

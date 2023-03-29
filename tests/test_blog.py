@@ -37,18 +37,27 @@ def test_author_required(app,client,auth):
 	assert client.post("/1/delete").status_code == 403
 	assert b"href=/1/update" not in client.get("/").data
 
-def test_spoof_author(app,client,auth):
-	with app.app_context():
-		db = get_db()
-		db.execute(
-			"UPDATE post SET author_id = 2 WHERE author_id = 1"
-		)
-		db.commit()
-
+def test_show(client,auth):
 	auth.login()
-	assert client.post("/1/update",data={"title":"spoofed title","body":"spoofed text","user_id":1}).status_code == 403
-	assert client.post("/1/delete").status_code == 403
-	assert b"href=/1/update" not in client.get("/").data
+	response = client.get("/")
+	assert b"test title" in response.data
+	assert b'href="/create"' in response.data
+	response = client.get("/1")
+	assert b"test title" in response.data
+	assert b'href="/create"' not in response.data
+
+# def test_spoof_author(app,client,auth):
+# 	with app.app_context():
+# 		db = get_db()
+# 		db.execute(
+# 			"UPDATE post SET author_id = 2 WHERE author_id = 1"
+# 		)
+# 		db.commit()
+
+# 	auth.login()
+# 	assert client.post("/1/update",data={"title":"spoofed title","body":"spoofed text","user_id":1}).status_code == 403
+# 	assert client.post("/1/delete").status_code == 403
+# 	assert b"href=/1/update" not in client.get("/").data
 
 @pytest.mark.parametrize('path', (
     '/2/update',

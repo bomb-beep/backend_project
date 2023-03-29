@@ -6,6 +6,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import abort
 from funkr.db import get_db
 from random import randint
+from base64 import b64encode,b64decode
 
 bp = Blueprint("auth",__name__,url_prefix="/auth")
 
@@ -37,9 +38,9 @@ def register():
 				# 	"SELECT * FROM user WHERE username = ?",(username,)
 				# ).fetchone()
 				session.clear()
-				session["user_token"] = db.execute(
+				session["user_token"] = b64encode(bytes(db.execute(
 					"SELECT token FROM user WHERE username = ?",(username,)
-				).fetchone()["token"]
+				).fetchone()["token"],"utf8"))
 				return redirect(url_for("index"))
 		
 		flash(error)
@@ -68,7 +69,7 @@ def login():
 				error = "Incorrect password"
 			else:
 				session.clear()
-				session["user_token"] = user["token"]
+				session["user_token"] = b64encode(bytes(user["token"],"utf8"))
 				
 		if error:
 			flash(error)
@@ -80,14 +81,17 @@ def login():
 @bp.before_app_request
 def load_logged_in_user():
 	user_token = session.get("user_token")
-
+	#print(get_db().execute("SELECT * FROM user").fetchone()["token"])
 	if user_token == None:
 		g.user = None
 	else:
+		user_token = str(b64decode(user_token),"utf8")
 		g.user = get_db().execute(
 			"SELECT	* FROM user WHERE token = ?",
 			(user_token,)
 		).fetchone()
+		#print(user_token,str(user_token,"utf8"))
+		assert g.user is not None
 
 @bp.route("/logout")
 def logout():
