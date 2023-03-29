@@ -1,8 +1,8 @@
-#from funcr import db
+#from funkr import db
 import sqlite3
 import os
 
-DATABASE = "C:\\Users\\bo\\Desktop\\dev_proj\\instance\\funcr.sqlite"
+DATABASE = "C:\\Users\\bo\\Desktop\\dev_proj\\instance\\funkr.sqlite"
 
 def connect_db():
 	return sqlite3.connect(DATABASE,detect_types=sqlite3.PARSE_DECLTYPES)

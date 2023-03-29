@@ -1,6 +1,6 @@
 import os,tempfile,pytest
-from funcr import create_app
-from funcr.db import get_db,init_db
+from funkr import create_app
+from funkr.db import get_db,init_db
 
 with open(os.path.join(os.path.dirname(__file__), "data.sql"),"rb") as f:
 	_data_sql = f.read().decode("utf8")

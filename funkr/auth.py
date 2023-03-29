@@ -4,7 +4,8 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.exceptions import abort
-from funcr.db import get_db
+from funkr.db import get_db
+from random import randint
 
 bp = Blueprint("auth",__name__,url_prefix="/auth")
 
@@ -25,8 +26,8 @@ def register():
 		if not error:
 			try:
 				db.execute(
-					"INSERT INTO user (username, password) VALUES (?,?)",
-					(username,generate_password_hash(password))
+					"INSERT INTO user (username, password, token) VALUES (?,?,?)",
+					(username,generate_password_hash(password),randint(0,9999999999))
 				)
 				db.commit()
 			except db.IntegrityError:
@@ -36,9 +37,9 @@ def register():
 				# 	"SELECT * FROM user WHERE username = ?",(username,)
 				# ).fetchone()
 				session.clear()
-				session["user_id"] = db.execute(
-					"SELECT id FROM user WHERE username = ?",(username,)
-				).fetchone()["id"]
+				session["user_token"] = db.execute(
+					"SELECT token FROM user WHERE username = ?",(username,)
+				).fetchone()["token"]
 				return redirect(url_for("index"))
 		
 		flash(error)
@@ -67,7 +68,7 @@ def login():
 				error = "Incorrect password"
 			else:
 				session.clear()
-				session["user_id"] = user["id"]
+				session["user_token"] = user["token"]
 				
 		if error:
 			flash(error)
@@ -78,14 +79,14 @@ def login():
 
 @bp.before_app_request
 def load_logged_in_user():
-	user_id = session.get("user_id")
+	user_token = session.get("user_token")
 
-	if user_id == None:
+	if user_token == None:
 		g.user = None
 	else:
 		g.user = get_db().execute(
-			"SELECT	* FROM user WHERE id = ?",
-			(user_id,)
+			"SELECT	* FROM user WHERE token = ?",
+			(user_token,)
 		).fetchone()
 
 @bp.route("/logout")

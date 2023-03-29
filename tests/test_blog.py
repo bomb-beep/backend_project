@@ -1,5 +1,5 @@
 import pytest
-from funcr.db import get_db
+from funkr.db import get_db
 
 def test_index(client,auth):
 	response = client.get("/")
@@ -34,6 +34,19 @@ def test_author_required(app,client,auth):
 
 	auth.login()
 	assert client.post("/1/update").status_code == 403
+	assert client.post("/1/delete").status_code == 403
+	assert b"href=/1/update" not in client.get("/").data
+
+def test_spoof_author(app,client,auth):
+	with app.app_context():
+		db = get_db()
+		db.execute(
+			"UPDATE post SET author_id = 2 WHERE author_id = 1"
+		)
+		db.commit()
+
+	auth.login()
+	assert client.post("/1/update",data={"title":"spoofed title","body":"spoofed text","user_id":1}).status_code == 403
 	assert client.post("/1/delete").status_code == 403
 	assert b"href=/1/update" not in client.get("/").data
 

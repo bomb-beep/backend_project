@@ -1,6 +1,6 @@
 import sqlite3
 import pytest
-from funcr.db import get_db
+from funkr.db import get_db
 
 def test_get_close_db(app):
 	with app.app_context():
@@ -19,7 +19,7 @@ def test_init_db_command(runner,monkeypatch):
 	def fake_db_init():
 		Recorder.called = True
 
-	monkeypatch.setattr("funcr.db.init_db",fake_db_init)
+	monkeypatch.setattr("funkr.db.init_db",fake_db_init)
 	result = runner.invoke(args=["init-db"])
 	assert "Initialized" in result.output
 	assert Recorder.called
