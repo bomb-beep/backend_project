@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask,jsonify,Response
 from flask_restful import Api,Resource
 import os
 
@@ -23,9 +23,16 @@ def create_app(test_config=None):
 	from . import db
 	db.init_app(app)
 
+	class TestDB(Resource):
+		def post(self):
+			db.test_db()
+			return {"message":"Established Test Database"},200
+		
+	api.add_resource(TestDB,"/testdb/")
+
 	class Hello(Resource):
 		def get(self):
-			return {"data":"Hello!"}
+			return {"message":"Hello!"}
 		
 	api.add_resource(Hello,"/hello/")
 
@@ -34,6 +41,7 @@ def create_app(test_config=None):
 	api.add_resource(blog.Blog,"/posts/all/")
 	api.add_resource(blog.Create,"/posts/create/")
 	api.add_resource(blog.Update,"/posts/edit/<int:post_id>/")
+	api.add_resource(blog.Delete,"/posts/delete/<int:post_id>/")
 
 	return app
 

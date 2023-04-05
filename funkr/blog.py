@@ -10,13 +10,17 @@ post_args = reqparse.RequestParser()
 post_args.add_argument("Authorization",type=str)
 post_args.add_argument("post_body",type=str)
 
-class Post(Resource):
-	def get(self,post_id):
-		post = get_db().execute(
+def get_post(post_id):
+	post = get_db().execute(
 			"SELECT * FROM post WHERE post_id = ?",
 			(post_id,)
 		).fetchone()
-		return dict(post)
+	return post
+
+class Post(Resource):
+	def get(self,post_id):
+		post = get_post(post_id)
+		return dict(post) if post is not None else 404
 	
 class Create(Resource):
 	def post(self):
@@ -33,7 +37,7 @@ class Create(Resource):
 		db.commit()
 		#print(args)
 		#return Response("Created post",status=201)
-		return "Created post",201
+		return {"message":"Created post"},201
 	
 class Update(Resource):
 	def put(self,post_id):
@@ -41,10 +45,7 @@ class Update(Resource):
 		if args["Authorization"] is None:
 			return 401
 		db = get_db()
-		post = db.execute(
-			"SELECT * FROM post WHERE post_id = ?",
-			(post_id,)
-		).fetchone()
+		post = get_post(post_id)
 		if post is None:
 			return 404
 		
@@ -56,7 +57,46 @@ class Update(Resource):
 			(args["post_body"],post_id)
 		)
 		db.commit()
-		return "Updated post",204
+		return {"message":"Updated post"},200
+	
+class Delete(Resource):
+	def delete(self,post_id):
+		post = get_post(post_id)
+		if post is None:
+			return 404
+		
+		args = post_args.parse_args()
+		if "Authorization" not in args:
+			return 401
+		
+		user = authorize_user(post["post_user_id"],args["Authorization"])
+
+		if user is None:
+			return 403
+		
+		db = get_db()
+		db.execute("DELETE FROM post WHERE post_id = ?",(post_id,))
+		db.commit()
+		return {"message":"Deleted post"},200
+	
+	def post(self,post_id):
+		post = get_post(post_id)
+		if post is None:
+			return 404
+		
+		args = post_args.parse_args()
+		if "Authorization" not in args or args["Authorization"] is None:
+			return 401
+		
+		user = authorize_user(post["post_user_id"],args["Authorization"])
+
+		if user is None:
+			return 403
+		
+		db = get_db()
+		db.execute("DELETE FROM post WHERE post_id = ?",(post_id,))
+		db.commit()
+		return {"message":"Deleted post"},200
 	
 class Blog(Resource):
 	def get(self):
