@@ -3,7 +3,7 @@ from flask_restful import Resource,Api,reqparse
 from werkzeug.exceptions import abort
 
 from funkr.db import get_db
-from funkr.auth import authenticate_user,authorize_user
+from funkr.auth import authenticate_user#,authorize_user
 
 post_args = reqparse.RequestParser()
 #create_post_args.add_argument("post_title",type=str)
@@ -12,7 +12,9 @@ post_args.add_argument("post_body",type=str)
 
 def get_post(post_id):
 	post = get_db().execute(
-			"SELECT * FROM post WHERE post_id = ?",
+			"SELECT post_id,post_user_id,post_body,user_name"
+			" FROM post JOIN user ON post_user_id = user_id"
+			" WHERE post_id = ?",
 			(post_id,)
 		).fetchone()
 	return post
@@ -20,14 +22,17 @@ def get_post(post_id):
 class Post(Resource):
 	def get(self,post_id):
 		post = get_post(post_id)
-		return dict(post) if post is not None else 404
+		if post is None:
+			return {"message":"Post not found"},404
+		else:
+			return dict(post)
 	
 class Create(Resource):
 	def post(self):
 		args = post_args.parse_args()
 		user = authenticate_user(args["Authorization"])
 		if user is None:
-			return 401
+			return {"message":"Login required"},401
 		
 		db = get_db()
 		db.execute(
@@ -41,17 +46,19 @@ class Create(Resource):
 	
 class Update(Resource):
 	def put(self,post_id):
-		args = post_args.parse_args()
-		if args["Authorization"] is None:
-			return 401
-		db = get_db()
 		post = get_post(post_id)
 		if post is None:
-			return 404
+			return {"message":"Post not found"},404
 		
-		user = authorize_user(post["post_user_id"],args["Authorization"])
+		args = post_args.parse_args()
+		if "Authorization" not in args:
+			return {"message":"Login required"},401
+		
+		user = authenticate_user(args["Authorization"],post["post_user_id"],)
 		if user is None:
-			return 403
+			return {"message":"Unauthorized user"},403
+		
+		db = get_db()
 		db.execute(
 			"UPDATE post SET post_body = ? WHERE post_id = ?",
 			(args["post_body"],post_id)
@@ -63,16 +70,15 @@ class Delete(Resource):
 	def delete(self,post_id):
 		post = get_post(post_id)
 		if post is None:
-			return 404
+			return {"message":"Post not found"},404
 		
 		args = post_args.parse_args()
 		if "Authorization" not in args:
-			return 401
+			return {"message":"Login required"},401
 		
-		user = authorize_user(post["post_user_id"],args["Authorization"])
-
+		user = authenticate_user(args["Authorization"],post["post_user_id"],)
 		if user is None:
-			return 403
+			return {"message":"Unauthorized user"},403
 		
 		db = get_db()
 		db.execute("DELETE FROM post WHERE post_id = ?",(post_id,))
@@ -80,23 +86,7 @@ class Delete(Resource):
 		return {"message":"Deleted post"},200
 	
 	def post(self,post_id):
-		post = get_post(post_id)
-		if post is None:
-			return 404
-		
-		args = post_args.parse_args()
-		if "Authorization" not in args or args["Authorization"] is None:
-			return 401
-		
-		user = authorize_user(post["post_user_id"],args["Authorization"])
-
-		if user is None:
-			return 403
-		
-		db = get_db()
-		db.execute("DELETE FROM post WHERE post_id = ?",(post_id,))
-		db.commit()
-		return {"message":"Deleted post"},200
+		return self.delete(post_id)
 	
 class Blog(Resource):
 	def get(self):

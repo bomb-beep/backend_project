@@ -3,7 +3,7 @@ from base64 import b64decode,b64encode
 
 from funkr.db import get_db
 
-def authenticate_user(user_token):
+def authenticate_user(user_token,authorize_id=None):
 	token = user_token.split(" ")
 	token = str(b64decode(token[token.index("Basic") + 1]),"utf8")
 	
@@ -13,9 +13,11 @@ def authenticate_user(user_token):
 		(token,)
 	).fetchone()
 	#print(user,user["user_id"])
+	if authorize_id is not None and authorize_id is not user["user_id"]:
+		return None
 	
 	return user
 
-def authorize_user(user_id,user_token):
-	user = authenticate_user(user_token)
-	return None if user is None or user["user_id"] != user_id else user
+# def authorize_user(user_id,user_token):
+# 	user = authenticate_user(user_token)
+# 	return None if user is None or user["user_id"] != user_id else user
