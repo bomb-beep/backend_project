@@ -19,6 +19,17 @@ def get_post(post_id):
 		).fetchone()
 	return post
 
+def check_args(post_id,args):
+	post = get_post(post_id)
+	if post is None:
+		return {"message":"Post not found"},404
+	if "Authorization" not in args:
+		return {"message":"Login required"},401
+	user = authenticate_user(args["Authorization"],post["post_user_id"])
+	if user is None:
+		return {"message":"Unauthorized user"},403
+	return None
+
 class Post(Resource):
 	def get(self,post_id):
 		post = get_post(post_id)
@@ -46,17 +57,20 @@ class Create(Resource):
 	
 class Update(Resource):
 	def put(self,post_id):
-		post = get_post(post_id)
-		if post is None:
-			return {"message":"Post not found"},404
+		# post = get_post(post_id)
+		# if post is None:
+		# 	return {"message":"Post not found"},404
 		
+		# if "Authorization" not in args:
+		# 	return {"message":"Login required"},401
+		
+		# user = authenticate_user(args["Authorization"],post["post_user_id"],)
+		# if user is None:
+		# 	return {"message":"Unauthorized user"},403
 		args = post_args.parse_args()
-		if "Authorization" not in args:
-			return {"message":"Login required"},401
-		
-		user = authenticate_user(args["Authorization"],post["post_user_id"],)
-		if user is None:
-			return {"message":"Unauthorized user"},403
+		error = check_args(post_id,args)
+		if error is not None:
+			return error
 		
 		db = get_db()
 		db.execute(
@@ -68,18 +82,21 @@ class Update(Resource):
 	
 class Delete(Resource):
 	def delete(self,post_id):
-		post = get_post(post_id)
-		if post is None:
-			return {"message":"Post not found"},404
+		# post = get_post(post_id)
+		# if post is None:
+		# 	return {"message":"Post not found"},404
 		
+		# args = post_args.parse_args()
+		# if "Authorization" not in args:
+		# 	return {"message":"Login required"},401
+		
+		# user = authenticate_user(args["Authorization"],post["post_user_id"],)
+		# if user is None:
+		# 	return {"message":"Unauthorized user"},403
 		args = post_args.parse_args()
-		if "Authorization" not in args:
-			return {"message":"Login required"},401
-		
-		user = authenticate_user(args["Authorization"],post["post_user_id"],)
-		if user is None:
-			return {"message":"Unauthorized user"},403
-		
+		error = check_args(post_id,args)
+		if error is not None:
+			return error
 		db = get_db()
 		db.execute("DELETE FROM post WHERE post_id = ?",(post_id,))
 		db.commit()
