@@ -6,7 +6,6 @@ from funkr.db import get_db
 from funkr.auth import authenticate_user#,authorize_user
 
 post_args = reqparse.RequestParser()
-#create_post_args.add_argument("post_title",type=str)
 post_args.add_argument("Authorization",type=str)
 post_args.add_argument("post_body",type=str)
 
@@ -51,22 +50,10 @@ class Create(Resource):
 			(args["post_body"],user["user_id"])
 		)
 		db.commit()
-		#print(args)
-		#return Response("Created post",status=201)
 		return {"message":"Created post"},201
 	
 class Update(Resource):
 	def put(self,post_id):
-		# post = get_post(post_id)
-		# if post is None:
-		# 	return {"message":"Post not found"},404
-		
-		# if "Authorization" not in args:
-		# 	return {"message":"Login required"},401
-		
-		# user = authenticate_user(args["Authorization"],post["post_user_id"],)
-		# if user is None:
-		# 	return {"message":"Unauthorized user"},403
 		args = post_args.parse_args()
 		error = check_args(post_id,args)
 		if error is not None:
@@ -82,17 +69,6 @@ class Update(Resource):
 	
 class Delete(Resource):
 	def delete(self,post_id):
-		# post = get_post(post_id)
-		# if post is None:
-		# 	return {"message":"Post not found"},404
-		
-		# args = post_args.parse_args()
-		# if "Authorization" not in args:
-		# 	return {"message":"Login required"},401
-		
-		# user = authenticate_user(args["Authorization"],post["post_user_id"],)
-		# if user is None:
-		# 	return {"message":"Unauthorized user"},403
 		args = post_args.parse_args()
 		error = check_args(post_id,args)
 		if error is not None:
@@ -108,7 +84,8 @@ class Delete(Resource):
 class Blog(Resource):
 	def get(self):
 		posts = get_db().execute(
-			"SELECT * FROM post"
+			"SELECT post_id,post_user_id,post_body,user_name"
+			 " FROM post JOIN user ON user_id = post_user_id"
 		).fetchall()
 		index = []
 		for post in posts:
